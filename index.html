@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AI for Interdisciplinary Design Portfolio — an interactive portfolio by Christopher Roth.">
+  <title>AI for Interdisciplinary Design Portfolio</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="home-page home-redesign">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <main id="main-content" class="home-composition">
+    <section class="painting-stage" aria-labelledby="page-title">
+      <canvas id="paint-canvas" width="1440" height="960" tabindex="-1" aria-hidden="true"></canvas>
+      <div
+        id="paint-surface"
+        class="paint-hit-region"
+        tabindex="0"
+        role="application"
+        aria-label="Unified painting surface for ROTH and CHRISTOPHER"
+        aria-describedby="paint-instructions"
+      ></div>
+
+      <aside class="corner-palette" aria-labelledby="palette-title">
+        <h2 class="sr-only" id="palette-title">Artist's palette</h2>
+        <div class="palette-board" role="group" aria-label="Sample a paint color directly from the palette photograph">
+          <img class="palette-photo" src="assets/palette/photographic-palette.png" width="1536" height="1024" alt="Paint-covered artist's palette used as an interactive color picker" role="button" tabindex="0" aria-label="Click a painted area to select its exact RGB color">
+          <span class="palette-sample-marker" aria-hidden="true"></span>
+          <button class="random-paint palette-random-hit" type="button" data-color="random" aria-label="Random paint color, key R" aria-pressed="false"><span aria-hidden="true">Random</span></button>
+        </div>
+      </aside>
+
+      <h1 id="page-title" class="composition-title">
+        <span class="title-ai">AI</span>
+        <span class="title-for">for</span>
+        <span class="title-discipline">Interdisciplinary Design</span>
+        <span class="title-portfolio">Portfolio</span>
+      </h1>
+
+      <div class="home-content">
+        <nav class="home-projects" aria-label="Portfolio projects">
+          <a class="home-project album-project tilt-card" href="album.html">
+            <span class="home-project-image album-image">
+              <img src="aLbum_cover.png" width="1254" height="1254" alt="Seasons of Solitude album cover showing a solitary figure facing a moonlit reflection">
+            </span>
+            <span class="home-project-label"><small>01</small> Album Art <i aria-hidden="true">↗</i></span>
+          </a>
+
+          <a class="home-project workspace-project tilt-card" href="workspace.html">
+            <span class="home-project-image workspace-image">
+              <img src="wOrkspace_Commons.png" width="2560" height="1440" alt="Rendering of an adaptable 2035 creative workspace commons" loading="lazy">
+            </span>
+            <span class="home-project-label"><small>02</small> 2035 Creative Workspace <i aria-hidden="true">↗</i></span>
+          </a>
+        </nav>
+
+      </div>
+
+      <details class="shortcut-guide name-shortcut-guide" id="paint-instructions">
+        <summary>Keyboard painting</summary>
+        <p>Click the palette photograph to sample its exact color. Focus the painting area, use the arrows to move, Space or Enter to splatter, and Shift + Arrow to brush. R selects Random; [ and ] change size; Delete resets; Escape exits.</p>
+      </details>
+
+      <p id="paint-status" class="sr-only" aria-live="polite"></p>
+      <p class="home-credit">Christopher Roth · Interactive portfolio</p>
+    </section>
+  </main>
+
+  <script src="js/palette-color-map.js" defer></script>
+  <script src="js/painting.js" defer></script>
+  <script src="js/main.js" defer></script>
+</body>
+</html>
