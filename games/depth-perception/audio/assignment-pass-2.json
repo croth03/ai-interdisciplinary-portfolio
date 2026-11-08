@@ -1,0 +1,134 @@
+{
+  "signatureAndAmbience": {
+    "death": {
+      "source": "interface/minimize_005.ogg",
+      "output": "sfx/player/player_death.ogg",
+      "sourceDuration": 0.526372,
+      "outputDuration": 0.526372,
+      "trimmedSeconds": 0.0,
+      "gainDb": -2.179
+    },
+    "depthShiftForeground": {
+      "source": "interface/maximize_004.ogg",
+      "output": "sfx/depth/depth_shift_foreground.ogg",
+      "sourceDuration": 0.417959,
+      "outputDuration": 0.406327,
+      "trimmedSeconds": 0.011633,
+      "gainDb": -2.061
+    },
+    "depthShiftBackground": {
+      "source": "interface/minimize_004.ogg",
+      "output": "sfx/depth/depth_shift_background.ogg",
+      "sourceDuration": 0.417959,
+      "outputDuration": 0.417959,
+      "trimmedSeconds": 0.0,
+      "gainDb": -2.06
+    },
+    "relic": {
+      "source": "impact/impactBell_heavy_002.ogg",
+      "output": "sfx/collectibles/relic_pickup.ogg",
+      "sourceDuration": 0.697279,
+      "outputDuration": 0.516531,
+      "trimmedSeconds": 0.180748,
+      "gainDb": -2.21
+    },
+    "warning": {
+      "source": "interface/error_004.ogg",
+      "output": "sfx/ui/warning_beep.ogg",
+      "sourceDuration": 0.102698,
+      "outputDuration": 0.102698,
+      "trimmedSeconds": 0.0,
+      "gainDb": -3.749
+    },
+    "foundry": {
+      "source": "interface/scroll_003.ogg",
+      "output": "ambient/ambient_foundry.ogg",
+      "sourceDuration": 1.000023,
+      "outputDuration": 1.000023,
+      "trimmedSeconds": 0.0,
+      "gainDb": -9.074
+    },
+    "turbine": {
+      "source": "interface/scroll_002.ogg",
+      "output": "ambient/ambient_turbine.ogg",
+      "sourceDuration": 1.000023,
+      "outputDuration": 1.000023,
+      "trimmedSeconds": 0.0,
+      "gainDb": -9.081
+    },
+    "core": {
+      "source": "interface/scroll_005.ogg",
+      "output": "ambient/ambient_core.ogg",
+      "sourceDuration": 1.000023,
+      "outputDuration": 1.000023,
+      "trimmedSeconds": 0.0,
+      "gainDb": -10.085
+    },
+    "deepAssembly": {
+      "source": "interface/scroll_004.ogg",
+      "output": "ambient/ambient_deep_assembly.ogg",
+      "sourceDuration": 1.000023,
+      "outputDuration": 1.000023,
+      "trimmedSeconds": 0.0,
+      "gainDb": -10.101
+    },
+    "zeroDepth": {
+      "source": "interface/scroll_001.ogg",
+      "output": "ambient/ambient_zero_depth.ogg",
+      "sourceDuration": 1.000023,
+      "outputDuration": 1.000023,
+      "trimmedSeconds": 0.0,
+      "gainDb": -11.138
+    }
+  },
+  "music": {
+    "title": {
+      "source": "ElevenLabs_audio_elevenlabs-music-v2_Instrumental am_2026-10-07T03_38_05.mp3",
+      "output": "music/music_title.mp3",
+      "duration": 180.0,
+      "sampleRate": 48000,
+      "channels": 2,
+      "bitIdenticalCopy": true
+    },
+    "level1": {
+      "source": "ElevenLabs_audio_elevenlabs-music-v2_Instrumental am_2026-10-07T03_38_22.mp3",
+      "output": "music/music_level_1.mp3",
+      "duration": 180.0,
+      "sampleRate": 48000,
+      "channels": 2,
+      "bitIdenticalCopy": true
+    },
+    "level2": {
+      "source": "ElevenLabs_audio_elevenlabs-music-v2_Instrumental am_2026-10-07T04_32_02.mp3",
+      "output": "music/music_level_2.mp3",
+      "duration": 180.0,
+      "sampleRate": 48000,
+      "channels": 2,
+      "bitIdenticalCopy": true
+    },
+    "level3": {
+      "source": "ElevenLabs_audio_elevenlabs-music-v2_Instrumental am_2026-10-07T03_37_51.mp3",
+      "output": "music/music_level_3.mp3",
+      "duration": 180.0,
+      "sampleRate": 48000,
+      "channels": 2,
+      "bitIdenticalCopy": true
+    },
+    "level4": {
+      "source": "ElevenLabs_audio_elevenlabs-music-v2_Instrumental am_2026-10-07T04_32_09.mp3",
+      "output": "music/music_level_4.mp3",
+      "duration": 180.0,
+      "sampleRate": 48000,
+      "channels": 2,
+      "bitIdenticalCopy": true
+    },
+    "level5": {
+      "source": "ElevenLabs_audio_elevenlabs-music-v2_Instrumental am_2026-10-07T04_32_28.mp3",
+      "output": "music/music_level_5.mp3",
+      "duration": 180.0,
+      "sampleRate": 48000,
+      "channels": 2,
+      "bitIdenticalCopy": true
+    }
+  }
+}

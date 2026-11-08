@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Depth Perception — a three-level demo across three shifting layers of reality.">
+  <meta name="theme-color" content="#080817">
+  <title>Depth Perception</title>
+  <script>if (new URLSearchParams(location.search).get("controls") === "0") document.documentElement.classList.add("hide-development-controls");</script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game-shell">
+    <header class="masthead">
+      <div><p class="eyebrow">A journey through fractured reality</p><h1><span>Depth</span> Perception</h1></div>
+      <div class="plane-key" aria-label="Depth plane color key">
+        <span class="plane plane-back"><i></i>Background</span><span class="plane plane-mid"><i></i>Middle</span><span class="plane plane-front"><i></i>Foreground</span>
+      </div>
+    </header>
+
+    <section class="screen-frame" id="screen-frame" aria-label="Game area">
+      <canvas id="game" width="960" height="540" tabindex="0" aria-label="Depth Perception game canvas"></canvas>
+      <div class="scanlines" aria-hidden="true"></div>
+      <button class="pause-button" type="button" data-command="pause" aria-label="Pause game">Ⅱ</button>
+      <div class="ui-layer" id="ui-layer">
+        <section class="menu-screen title-screen" data-screen="title" aria-labelledby="title-heading">
+          <p class="menu-kicker">The world is deeper than it appears</p><h2 id="title-heading">Depth<br><span>Perception</span></h2>
+          <p class="menu-copy">Cross three layers of a fractured world, where distance changes scale and every threshold reveals a different truth.</p>
+          <nav class="menu-actions" aria-label="Main menu">
+            <button type="button" id="enable-audio" data-command="enable-audio">Enable menu audio</button><button type="button" data-command="start">Start game</button><button type="button" data-command="level-select">Level select</button><button type="button" data-command="options">Options</button><button type="button" data-command="credits">Credits</button>
+          </nav>
+        </section>
+        <section class="menu-screen" data-screen="levelSelect" hidden aria-labelledby="select-heading">
+          <p class="menu-kicker">Recovered memories</p><h2 id="select-heading">Choose a passage</h2><div class="level-grid" id="level-grid"></div><button class="menu-back" type="button" data-command="title">← Main menu</button>
+        </section>
+        <section class="menu-screen compact-menu" data-screen="options" hidden aria-labelledby="options-heading">
+          <p class="menu-kicker">Tune your perception</p><h2 id="options-heading">Options</h2>
+          <label class="option-row"><span>Music volume</span><input id="music-volume" type="range" min="0" max="100" value="45"></label>
+          <label class="option-row"><span>SFX volume</span><input id="sfx-volume" type="range" min="0" max="100" value="70"></label>
+          <div class="option-row"><span>Touch controls</span><button type="button" id="touch-mode" data-command="touch-mode" disabled>Inactive</button></div>
+          <button class="menu-back" type="button" data-command="back">← Back</button>
+        </section>
+        <section class="menu-screen compact-menu" data-screen="credits" hidden aria-labelledby="credits-heading">
+          <p class="menu-kicker">The people behind the veil</p><h2 id="credits-heading">Credits</h2>
+          <p class="credits-copy">Game design, code, and original procedural art created for this HTML5 prototype. Sound effects use commercially licensed Kenney assets; music was created with a paid ElevenLabs commercial license. Concept imagery was created for Depth Perception.</p>
+          <button class="menu-back" type="button" data-command="title">← Main menu</button>
+        </section>
+        <section class="menu-screen compact-menu" data-screen="paused" hidden aria-labelledby="pause-heading">
+          <p class="menu-kicker">The world holds its breath</p><h2 id="pause-heading">Paused</h2>
+          <nav class="menu-actions"><button type="button" data-command="resume">Resume</button><button type="button" data-command="restart">Restart level</button><button type="button" data-command="options">Options</button><button type="button" data-command="level-select">Level select</button><button type="button" data-command="title">Title screen</button></nav>
+        </section>
+        <section class="menu-screen results-screen" data-screen="levelComplete" hidden aria-labelledby="complete-heading">
+          <p class="menu-kicker" id="complete-kicker">Route secured</p><h2 id="complete-heading">Level complete</h2><div class="results-grid" id="level-results"></div>
+          <nav class="menu-actions horizontal-actions"><button type="button" data-command="next">Next level</button><button type="button" data-command="restart">Retry</button><button type="button" data-command="level-select">Level select</button></nav>
+        </section>
+        <section class="menu-screen results-screen" data-screen="gameComplete" hidden aria-labelledby="game-complete-heading">
+          <p class="menu-kicker">Demo complete</p><h2 id="game-complete-heading">The crossing continues</h2><p class="menu-copy">You have reached the end of the playable demo. Revisit the first three passages to recover missed memories and anchors.</p><div class="results-grid" id="game-results"></div>
+          <nav class="menu-actions horizontal-actions"><button type="button" data-command="level-select">Replay levels</button><button type="button" data-command="title">Title screen</button></nav>
+        </section>
+      </div>
+      <div class="rotate-overlay" id="rotate-overlay" hidden><div class="rotate-device" aria-hidden="true"></div><strong>Rotate to landscape</strong><span>This world needs a wider view.</span></div>
+      <div class="touch-controls" id="touch-controls" aria-label="Touch controls" aria-hidden="true" hidden>
+        <div class="touch-cluster move-cluster"><button type="button" data-touch-action="left" aria-label="Move left">◀</button><button type="button" data-touch-action="right" aria-label="Move right">▶</button></div>
+<div class="touch-cluster action-cluster"><button class="touch-small" type="button" data-touch-action="roll" aria-label="Phase slide">Slide</button><button class="touch-small" type="button" data-touch-action="shoot" aria-label="Cast resonance">Cast</button><button class="touch-shift" type="button" data-touch-action="shift" aria-label="Shift depth plane">Shift</button><button class="touch-jump" type="button" data-touch-action="jump" aria-label="Jump or resonance surge">Jump</button></div>
+      </div>
+    </section>
+    <footer class="controls" aria-label="Keyboard controls">
+<div class="control-group"><span class="key">A</span><span class="key">D</span><b>Move</b></div><div class="control-group boost"><span class="key wide">Space ×2</span><b>Jump / surge</b></div><div class="control-group roll"><span class="key">S</span><b>Phase slide</b></div><div class="control-group weapon"><span class="key">J</span><b>Resonance / ↑ aim</b></div><div class="control-group accent"><span class="key">E</span><b>Shift plane</b></div><div class="control-group"><span class="key">Esc</span><b>Pause</b></div>
+    </footer>
+<p class="hint">Second jump surges higher. Phase-slide through ground creatures and beneath ruins. Cast upward with ↑ + J.</p>
+  </main>
+  <script src="game.js?v=totem-return-pass-4"></script>
+</body>
+</html>

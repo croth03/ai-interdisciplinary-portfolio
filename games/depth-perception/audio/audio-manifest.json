@@ -1,0 +1,105 @@
+{
+  "version": 2,
+  "basePath": "audio/",
+  "selected": {
+    "jump": "audio/sfx/player/player_jump.ogg",
+    "land": "audio/sfx/player/player_land.ogg",
+    "hurt": "audio/sfx/player/player_hurt.ogg",
+    "respawn": "audio/sfx/player/player_respawn.ogg",
+    "rocket": "audio/sfx/player/player_rocket.ogg",
+    "roll": "audio/sfx/player/player_roll.ogg",
+    "shot": "audio/sfx/player/player_shot.ogg",
+    "transitionPad": "audio/sfx/depth/transition_pad.ogg",
+    "phaseArrival": "audio/sfx/depth/phase_arrival.ogg",
+    "shard01": "audio/sfx/collectibles/shard_pickup_01.ogg",
+    "shard02": "audio/sfx/collectibles/shard_pickup_02.ogg",
+    "shard03": "audio/sfx/collectibles/shard_pickup_03.ogg",
+    "checkpoint": "audio/sfx/collectibles/checkpoint.ogg",
+    "enemyHit": "audio/sfx/enemies/enemy_hit.ogg",
+    "enemyDestroyed": "audio/sfx/enemies/enemy_destroyed.ogg",
+    "enemyAlert": "audio/sfx/enemies/enemy_alert.ogg",
+    "machineryLoop": "audio/sfx/machinery/machinery_loop.ogg",
+    "piston": "audio/sfx/machinery/piston_movement.ogg",
+    "steam": "audio/sfx/machinery/steam_burst.ogg",
+    "electricArc": "audio/sfx/machinery/electric_arc.ogg",
+    "machineryClunk": "audio/sfx/machinery/machinery_clunk.ogg",
+    "uiMove": "audio/sfx/ui/ui_move.ogg",
+    "uiSelect": "audio/sfx/ui/ui_select.ogg",
+    "uiBack": "audio/sfx/ui/ui_back.ogg",
+    "uiPause": "audio/sfx/ui/ui_pause.ogg",
+    "levelStart": "audio/sfx/ui/level_start.ogg",
+    "levelComplete": "audio/sfx/ui/level_complete.ogg",
+    "death": "audio/sfx/player/player_death.ogg",
+    "depthShiftForeground": "audio/sfx/depth/depth_shift_foreground.ogg",
+    "depthShiftBackground": "audio/sfx/depth/depth_shift_background.ogg",
+    "relic": "audio/sfx/collectibles/relic_pickup.ogg",
+    "warning": "audio/sfx/ui/warning_beep.ogg",
+    "foundry": "audio/ambient/ambient_foundry.ogg",
+    "turbine": "audio/ambient/ambient_turbine.ogg",
+    "core": "audio/ambient/ambient_core.ogg",
+    "deepAssembly": "audio/ambient/ambient_deep_assembly.ogg",
+    "zeroDepth": "audio/ambient/ambient_zero_depth.ogg",
+    "title": "audio/music/music_title.mp3",
+    "level1": "audio/music/music_level_1.mp3",
+    "level2": "audio/music/music_level_2.mp3",
+    "level3": "audio/music/music_level_3.mp3",
+    "level4": "audio/music/music_level_4.mp3",
+    "level5": "audio/music/music_level_5.mp3",
+    "gameComplete": "audio/music/music_title.mp3"
+  },
+  "variants": {
+    "shard": [
+      "shard01",
+      "shard02",
+      "shard03"
+    ]
+  },
+  "pitchVariation": {
+    "shard": [
+      0.96,
+      1.04
+    ]
+  },
+  "signatureReview": {
+    "depthShiftForeground": [
+      "audio/review/depth/depth_foreground_candidate_01_bright_sweep.ogg",
+      "audio/review/depth/depth_foreground_candidate_02_compact_rise.ogg",
+      "audio/review/depth/depth_foreground_candidate_03_weighted_rise.ogg"
+    ],
+    "depthShiftBackground": [
+      "audio/review/depth/depth_background_candidate_01_bright_fall.ogg",
+      "audio/review/depth/depth_background_candidate_02_compact_fall.ogg",
+      "audio/review/depth/depth_background_candidate_03_weighted_fall.ogg"
+    ],
+    "death": [
+      "audio/review/player_death/player_death_candidate_01_system_failure.ogg",
+      "audio/review/player_death/player_death_candidate_02_energy_collapse.ogg",
+      "audio/review/player_death/player_death_candidate_03_heavy_impact.ogg"
+    ],
+    "relic": [
+      "audio/review/relic/relic_candidate_01_resonant_bell.ogg",
+      "audio/review/relic/relic_candidate_02_bright_shimmer.ogg",
+      "audio/review/relic/relic_candidate_03_warm_confirmation.ogg"
+    ],
+    "turbine": [
+      "audio/review/turbine/turbine_candidate_01_smooth_low_loop.ogg",
+      "audio/review/turbine/turbine_candidate_02_mechanical_mid_loop.ogg",
+      "audio/review/turbine/turbine_candidate_03_bright_fast_loop.ogg"
+    ],
+    "music": [
+      "audio/review/music/music_candidate_01_high_energy_80bpm.mp3",
+      "audio/review/music/music_candidate_02_dark_spacious_80bpm.mp3",
+      "audio/review/music/music_candidate_03_balanced_80bpm.mp3"
+    ]
+  },
+  "unresolved": [],
+  "musicAssignment": {
+    "title": "dark/spacious menu theme",
+    "level1": "balanced introduction",
+    "level2": "fastest pulse for turbine climb",
+    "level3": "brightest/highest-energy core track",
+    "level4": "darkest low-spectrum deep-assembly track",
+    "level5": "balanced late-game/finale track",
+    "gameComplete": "returns to title theme"
+  }
+}
