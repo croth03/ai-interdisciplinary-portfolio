@@ -45,7 +45,25 @@
     "level3": "audio/music/music_level_3.mp3",
     "level4": "audio/music/music_level_4.mp3",
     "level5": "audio/music/music_level_5.mp3",
-    "gameComplete": "audio/music/music_title.mp3"
+    "gameComplete": "audio/music/music_title.mp3",
+    "level1FirstKill": "audio/narration/level_1_first_kill.mp3",
+    "level1FirstPortal": "audio/narration/level_1_first_portal.mp3",
+    "level1FirstAnchor": "audio/narration/level_1_first_anchor.mp3",
+    "level1FirstMemory": "audio/narration/level_1_first_memory.mp3",
+    "level1Exit": "audio/narration/level_1_exit.mp3",
+    "level2Start": "audio/narration/level_2_start.mp3",
+    "level2FirstAnchor": "audio/narration/level_2_first_anchor.mp3",
+    "level2Exit": "audio/narration/level_2_exit.mp3",
+    "level3Start": "audio/narration/level_3_start.mp3",
+    "level3FirstAnchor": "audio/narration/level_3_first_anchor.mp3",
+    "level3Exit": "audio/narration/level_3_exit.mp3",
+    "level4Start": "audio/narration/level_4_start.mp3",
+    "level4FirstAnchor": "audio/narration/level_4_first_anchor.mp3",
+    "level4Exit": "audio/narration/level_4_exit.mp3",
+    "level5Start": "audio/narration/level_5_start.mp3",
+    "level5FirstAnchor": "audio/narration/level_5_first_anchor.mp3",
+    "level5Exit": "audio/narration/level_5_exit.mp3",
+    "gameCompleteClose": "audio/narration/game_complete_close.mp3"
   },
   "variants": {
     "shard": [

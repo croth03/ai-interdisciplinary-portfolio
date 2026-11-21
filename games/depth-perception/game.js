@@ -4,7 +4,7 @@
   const VIEW_W = 960;
   const VIEW_H = 540;
   const FLOOR_Y = 470;
-  const DEMO_LEVEL_COUNT = 3;
+  const PLAYABLE_LEVEL_COUNT = 5;
   const TOUCH_CONTROLS_ENABLED = false;
   let WORLD_W = 3600;
   const TRANSITION_SAFETY = Object.freeze({ side: 40, headroom: 28, enemyPadding: 28, visualSide: 54, visualTop: 78 });
@@ -36,7 +36,9 @@
     "ground-mist": "art/environment-kit-v3/ground-mist-atlas.png",
     "foreground-fog": "art/environment-kit-v3/foreground-fog-atlas.png",
     "overhead-rocks": "art/environment-kit-v3/overhead-rocks-atlas.png",
-    "walls-cliffs": "art/environment-kit-v3/walls-cliffs-atlas.png"
+    "walls-cliffs": "art/environment-kit-v3/walls-cliffs-atlas.png",
+    "portal-stelae-v1": "art/portal-exit-kit/portal-stelae-v1.png",
+    "exit-arch-v1": "art/portal-exit-kit/exit-arch-v1.png"
   });
   const ENVIRONMENT_ATLAS_BOUNDS = Object.freeze({
     "platform-tops":[[24,198,843,150],[908,195,843,135],[24,603,843,147],[908,603,846,150]],
@@ -58,7 +60,9 @@
     "ground-mist":[[12,168,867,210],[905,237,816,105],[36,576,819,231],[890,633,876,198]],
     "foreground-fog":[[9,0,816,471],[851,0,810,471],[0,470,837,471],[836,470,837,471]],
     "overhead-rocks":[[21,18,849,309],[902,21,852,336],[21,453,852,384],[902,453,852,243]],
-    "walls-cliffs":[[105,18,312,735],[614,18,312,738],[75,786,375,738],[596,783,336,741]]
+    "walls-cliffs":[[105,18,312,735],[614,18,312,738],[75,786,375,738],[596,783,336,741]],
+    "portal-stelae-v1":[[95,8,675,850],[995,8,675,850]],
+    "exit-arch-v1":[[0,0,1536,1024]]
   });
   const CHARACTER_ART_SOURCES = Object.freeze({
     idle: "art/character-v1/veilwalker-idle.png",
@@ -99,8 +103,8 @@
     { scale: 1.22, parallax: 1.20, yOffset: 16, base: "#744d68", top: "#e790bd", glow: "#f0a6cf" }
   ];
   const ENEMY_TYPES = Object.freeze({
-    skitter: { w: 38, h: 26, health: 1, speed: 92, flying: false },
-    brute: { w: 52, h: 46, health: 3, speed: 34, flying: false },
+    skitter: { w: 46, h: 30, health: 1, speed: 92, flying: false },
+    brute: { w: 65, h: 58, health: 3, speed: 34, flying: false },
     sentry: { w: 38, h: 26, health: 2, speed: 72, flying: true },
     drifter: { w: 32, h: 32, health: 2, speed: 54, flying: true }
   });
@@ -150,7 +154,17 @@
         }
       });
       window.addEventListener("blur", () => this.clear());
-      target.addEventListener("pointerdown", () => target.focus());
+      target.addEventListener("pointerdown", event => {
+        target.focus();
+        if (event.pointerType === "mouse" && event.button === 0) {
+          event.preventDefault();
+          this.setPointerAction(`mouse-${event.pointerId}`, "shoot", true);
+        }
+      });
+      window.addEventListener("pointerup", event => {
+        if (event.pointerType === "mouse") this.setPointerAction(`mouse-${event.pointerId}`, "shoot", false);
+      });
+      window.addEventListener("pointercancel", event => this.setPointerAction(`mouse-${event.pointerId}`, "shoot", false));
     }
 
     pointerHasAction(action) { return [...this.pointerActions.values()].includes(action); }
@@ -186,6 +200,7 @@
       this.context = null;
       this.sfxVolume = 0.7;
       this.musicVolume = 0.45;
+      this.voiceVolume = 0.9;
       this.muted = false;
       this.currentMusic = "";
       this.musicNodes = null;
@@ -225,7 +240,17 @@
         title:"audio/music/music_title.mp3", level1:"audio/music/music_level_1.mp3",
         level2:"audio/music/music_level_2.mp3", level3:"audio/music/music_level_3.mp3",
         level4:"audio/music/music_level_4.mp3", level5:"audio/music/music_level_5.mp3",
-        gameComplete:"audio/music/music_title.mp3"
+        gameComplete:"audio/music/music_title.mp3",
+        level1FirstKill:"audio/narration/level_1_first_kill.mp3",
+        level1FirstPortal:"audio/narration/level_1_first_portal.mp3",
+        level1FirstAnchor:"audio/narration/level_1_first_anchor.mp3",
+        level1FirstMemory:"audio/narration/level_1_first_memory.mp3",
+        level1Exit:"audio/narration/level_1_exit.mp3",
+        level2Start:"audio/narration/level_2_start.mp3", level2FirstAnchor:"audio/narration/level_2_first_anchor.mp3", level2Exit:"audio/narration/level_2_exit.mp3",
+        level3Start:"audio/narration/level_3_start.mp3", level3FirstAnchor:"audio/narration/level_3_first_anchor.mp3", level3Exit:"audio/narration/level_3_exit.mp3",
+        level4Start:"audio/narration/level_4_start.mp3", level4FirstAnchor:"audio/narration/level_4_first_anchor.mp3", level4Exit:"audio/narration/level_4_exit.mp3",
+        level5Start:"audio/narration/level_5_start.mp3", level5FirstAnchor:"audio/narration/level_5_first_anchor.mp3", level5Exit:"audio/narration/level_5_exit.mp3",
+        gameCompleteClose:"audio/narration/game_complete_close.mp3"
       });
       this.activeAssetPaths = { ...this.assetPaths };
       this.musicIds = new Set(["title","level1","level2","level3","level4","level5","gameComplete"]);
@@ -244,6 +269,12 @@
       this.musicElement.preload = "auto";
       this.musicElement.loop = true;
       this.musicElement.setAttribute("aria-hidden", "true");
+      this.narrationElement = document.createElement("audio");
+      this.narrationElement.preload = "auto";
+      this.narrationElement.setAttribute("aria-hidden", "true");
+      this.narrationToken = 0;
+      this.narrationCallback = null;
+      this.isNarrating = false;
       this.loadedAssetCount = Object.keys(this.activeAssetPaths).length;
       this.mediaPlaybackErrors = 0;
       this.lastAudioError = "";
@@ -388,6 +419,65 @@
       this.musicNodes = null;
       this.currentMusic = "";
     }
+    updateMusicVolume() {
+      const duck = this.isNarrating ? 0.24 : 1;
+      this.musicElement.volume = this.muted ? 0 : this.musicVolume * duck;
+      if (this.musicNodes) this.musicNodes.gain.gain.value = this.muted ? 0 : this.musicVolume * .018 * duck;
+    }
+    finishNarration(token) {
+      if (token !== this.narrationToken) return;
+      const callback = this.narrationCallback;
+      this.narrationCallback = null;
+      this.isNarrating = false;
+      this.updateMusicVolume();
+      callback?.();
+    }
+    playNarration(name, onEnded = null) {
+      this.stopNarration();
+      const path = this.activeAssetPaths[name] || this.assetPaths[name];
+      const token = ++this.narrationToken;
+      this.narrationCallback = onEnded;
+      if (!path || this.muted || this.voiceVolume <= 0) {
+        queueMicrotask(() => this.finishNarration(token));
+        return false;
+      }
+      this.isNarrating = true;
+      this.updateMusicVolume();
+      const element = this.narrationElement;
+      element.src = path;
+      element.dataset.assetId = name;
+      element.volume = this.voiceVolume;
+      element.muted = this.muted;
+      element.currentTime = 0;
+      element.onended = () => this.finishNarration(token);
+      element.onerror = () => this.finishNarration(token);
+      element.play().then(() => {
+        this.filePlaybackCount += 1;
+        this.lastPlayedAsset = name;
+        this.lastAudioError = "";
+      }).catch(error => {
+        this.mediaPlaybackErrors += 1;
+        this.lastAudioError = `${name}: ${error?.name || "PLAYBACK_BLOCKED"}`;
+        this.finishNarration(token);
+      });
+      return true;
+    }
+    stopNarration() {
+      this.narrationToken += 1;
+      this.narrationCallback = null;
+      this.narrationElement.pause();
+      this.narrationElement.onended = null;
+      this.narrationElement.onerror = null;
+      this.isNarrating = false;
+      this.updateMusicVolume();
+    }
+    pauseNarration() {
+      if (this.isNarrating) this.narrationElement.pause();
+    }
+    resumeNarration() {
+      if (!this.isNarrating || this.muted) return;
+      this.narrationElement.play().catch(() => this.finishNarration(this.narrationToken));
+    }
     playAmbience(name) {
       if (this.currentAmbience === name && this.ambienceElement.dataset.assetId === name && !this.ambienceElement.paused) return;
       this.stopAmbience();
@@ -413,22 +503,24 @@
       this.ambienceElement.pause();
       this.currentAmbience = "";
     }
-    setVolumes(music, sfx) {
+    setVolumes(music, sfx, voice = this.voiceVolume) {
       this.musicVolume = clamp(music,0,1);
       this.sfxVolume = clamp(sfx,0,1);
-      this.musicElement.volume = this.muted ? 0 : this.musicVolume;
+      this.voiceVolume = clamp(voice,0,1);
+      this.updateMusicVolume();
       this.ambienceElement.volume = this.muted ? 0 : this.musicVolume * .32;
+      this.narrationElement.volume = this.muted ? 0 : this.voiceVolume;
       this.sfxPool.forEach(element => { element.volume = this.muted ? 0 : this.sfxVolume; });
-      if (this.musicNodes) this.musicNodes.gain.gain.value = this.muted ? 0 : this.musicVolume * .018;
     }
     setMuted(muted) {
       this.muted = Boolean(muted);
       this.musicElement.muted = this.muted;
-      this.musicElement.volume = this.muted ? 0 : this.musicVolume;
+      this.updateMusicVolume();
       this.ambienceElement.muted = this.muted;
       this.ambienceElement.volume = this.muted ? 0 : this.musicVolume * .32;
       this.sfxPool.forEach(element => { element.muted = this.muted; });
-      if (this.musicNodes) this.musicNodes.gain.gain.value = this.muted ? 0 : this.musicVolume * .018;
+      this.narrationElement.muted = this.muted;
+      this.narrationElement.volume = this.muted ? 0 : this.voiceVolume;
     }
   }
 
@@ -499,8 +591,8 @@
     constructor(x, y, vx, vy, depth, damage = 1) {
       Object.assign(this, {
         x, y, vx, vy, depth, damage,
-        w: vx === 0 ? 7 : 13,
-        h: vx === 0 ? 13 : 7,
+        w: 12,
+        h: 12,
         life: 1.25,
         dead: false
       });
@@ -698,8 +790,8 @@
       ],
       transitions: [[1070,1,0,470], [2390,0,1,470], [2500,1,2,470], [3290,2,1,470]],
       shards: [
-        [250,430,1],[430,370,1],[710,310,1],[960,360,1],[1080,430,1],
-        [1160,430,0],[1410,370,0],[1700,310,0],[2010,250,0],[2280,350,0],[2400,430,0],
+        [960,360,1],[1080,430,1],
+        [1160,430,0],[1270,430,0],[1410,370,0],[1550,370,0],[1700,310,0],[1840,310,0],[2010,250,0],[2280,350,0],[2400,430,0],
         [2460,430,1],[2690,365,1],[2870,430,1],[2960,430,2],[3160,430,2],[3330,430,2],[3450,430,1]
       ],
       relics: [[735,300,1,"DOOR SEED"], [2045,238,0,"ECHO LENS"], [3150,416,2,"ROOTBOUND HEART"]],
@@ -829,7 +921,7 @@
         ["drifter",3500,250,2,3300,3800,56],["brute",4800,null,0,4680,4980,25],["sentry",6100,330,1,5850,6350,80],
         ["skitter",7000,null,2,6880,7140,105],["drifter",7700,330,0,7480,7920,58],["brute",8440,null,1,8320,8600,30]
       ],
-      hazards: [[5920,452,130,18,1,"press"],[7020,452,100,18,2,"sparks"]],
+      hazards: [],
       checkpoints: [[2380,266,1,"PRESS SHAFT CLEAR"],[5600,416,1,"MAINTENANCE LOCK"],[8200,416,1,"ASSEMBLY CHAMBER"]],
       decorations: [
         ["tower",120,170,90,300,0,0],["machinery",520,230,260,240,1,0],["piston",1220,120,180,350,1,1],
@@ -882,7 +974,7 @@
         ["sentry",8500,130,1,8320,8800,86],["drifter",9300,140,2,9150,9450,65],["skitter",10050,null,0,9920,10280,112],
         ["brute",10720,null,1,10620,10850,32]
       ],
-      hazards: [[5660,452,140,18,1,"plasma"],[6350,452,120,18,2,"sparks"],[7620,452,120,18,0,"void"],[10080,452,130,18,0,"plasma"]],
+      hazards: [],
       checkpoints: [[2300,296,1,"CORE SUPPORTS"],[5350,416,1,"COLLAPSED REACTOR"],[7850,416,0,"ASCENT LOCK"],[8500,206,1,"FINAL CHAMBER"]],
       decorations: [
         ["tower",100,130,110,340,0,0],["cable",450,10,340,340,0,0],["piston",1200,100,200,370,1,1],
@@ -1028,6 +1120,7 @@
         image.src = source;
         return [name, image];
       }));
+      this.environmentCutouts = new Map();
       this.characterArt = Object.fromEntries(Object.entries(CHARACTER_ART_SOURCES).map(([name, source]) => {
         const image = new Image();
         image.src = source;
@@ -1038,6 +1131,7 @@
         image.src = source;
         return [name, image];
       }));
+      this.entityCutouts = new Map();
       this.input = new Input(canvas);
       this.audio = new AudioManager();
       this.camera = new Camera();
@@ -1076,13 +1170,16 @@
       this.rewardTimer = 0;
       this.rewardMessage = "";
       this.enemyKills = 0;
+      this.levelNarrationSeen = new Set();
+      this.narrationQueue = [];
+      this.storyLock = false;
       this.deaths = 0;
       this.flash = 0;
       this.environmentAudioTimer = 2.4;
       this.environmentAudioIndex = 0;
       this.alertedEnemyIds = new Set();
       this.lastTime = performance.now();
-      this.audio.setVolumes(this.options.music, this.options.sfx);
+      this.audio.setVolumes(this.options.music, this.options.sfx, this.options.voice);
       this.camera.reset(this.player.x, this.player.depth, this.player.w);
       this.bindUi();
       this.updateResponsiveState();
@@ -1104,9 +1201,14 @@
 
     loadProgress() {
       const saved = this.safeRead("phaseShiftFoundry.progress.v1", {});
+      const levels = Array.from({ length: LEVEL_DEFINITIONS.length }, (_, index) => saved.levels?.[index] || null);
+      let unlocked = clamp(Number(saved.unlocked) || 1, 1, PLAYABLE_LEVEL_COUNT);
+      // Migrate saves produced while the former three-level cap was active.
+      if (levels[2]?.complete) unlocked = Math.max(unlocked, 4);
+      if (levels[3]?.complete) unlocked = Math.max(unlocked, 5);
       return {
-        unlocked: clamp(Number(saved.unlocked) || 1, 1, DEMO_LEVEL_COUNT),
-        levels: Array.from({ length: LEVEL_DEFINITIONS.length }, (_, index) => saved.levels?.[index] || null)
+        unlocked,
+        levels
       };
     }
 
@@ -1115,6 +1217,7 @@
       return {
         music: clamp(Number.isFinite(saved.music) ? saved.music : 0.45, 0, 1),
         sfx: clamp(Number.isFinite(saved.sfx) ? saved.sfx : 0.7, 0, 1),
+        voice: clamp(Number.isFinite(saved.voice) ? saved.voice : 0.9, 0, 1),
         touch: ["auto", "on", "off"].includes(saved.touch) ? saved.touch : "auto"
       };
     }
@@ -1149,6 +1252,7 @@
       }
       const music = document.getElementById("music-volume");
       const sfx = document.getElementById("sfx-volume");
+      const voice = document.getElementById("voice-volume");
       if (music) {
         music.value = String(Math.round(this.options.music * 100));
         music.addEventListener("input", () => this.setVolume("music", Number(music.value) / 100));
@@ -1157,16 +1261,21 @@
         sfx.value = String(Math.round(this.options.sfx * 100));
         sfx.addEventListener("input", () => this.setVolume("sfx", Number(sfx.value) / 100));
       }
+      if (voice) {
+        voice.value = String(Math.round(this.options.voice * 100));
+        voice.addEventListener("input", () => this.setVolume("voice", Number(voice.value) / 100));
+      }
     }
 
     setVolume(channel, value) {
       this.options[channel] = clamp(value, 0, 1);
-      this.audio.setVolumes(this.options.music, this.options.sfx);
+      this.audio.setVolumes(this.options.music, this.options.sfx, this.options.voice);
       this.safeWrite("phaseShiftFoundry.options.v1", this.options);
     }
 
     handleCommand(command) {
       this.canvas.dataset.lastCommand = command || "";
+      if (command === "next" && this.audio.isNarrating) return;
       if (command === "back") this.audio.play("uiBack");
       else if (command !== "pause" && command !== "resume") this.audio.play("uiSelect");
       if (command === "enable-audio") {
@@ -1183,7 +1292,7 @@
       if (command === "pause") return this.pauseGame();
       if (command === "resume") return this.resumeGame();
       if (command === "restart") return this.restart();
-      if (command === "next") return this.currentLevelIndex < DEMO_LEVEL_COUNT - 1 ? this.startLevel(this.currentLevelIndex + 1) : this.setState(STATE.GAME_COMPLETE);
+      if (command === "next") return this.currentLevelIndex < PLAYABLE_LEVEL_COUNT - 1 ? this.startLevel(this.currentLevelIndex + 1) : this.setState(STATE.GAME_COMPLETE);
       if (command === "options") {
         this.returnState = this.state === STATE.PAUSED ? STATE.PAUSED : STATE.TITLE;
         return this.setState(STATE.OPTIONS);
@@ -1202,15 +1311,61 @@
     setState(next) {
       this.state = next;
       this.input.clear();
+      if ([STATE.TITLE, STATE.LEVEL_SELECT, STATE.CREDITS].includes(next)) {
+        this.narrationQueue = [];
+        this.audio.stopNarration();
+      }
       if (next === STATE.TITLE) this.audio.playMusic("title");
       if (next === STATE.TITLE) this.audio.stopAmbience();
-      if (next === STATE.GAME_COMPLETE) { this.audio.stopAmbience(); this.audio.playMusic("gameComplete"); }
+      if (next === STATE.GAME_COMPLETE) {
+        this.audio.stopAmbience();
+        this.audio.playMusic("gameComplete");
+        this.playNarrationOnce("gameCompleteClose");
+      }
       this.syncUi();
     }
 
+    playNarrationOnce(id, options = {}) {
+      if (!id || this.levelNarrationSeen.has(id)) return false;
+      this.levelNarrationSeen.add(id);
+      if (this.audio.isNarrating) {
+        this.narrationQueue.push({ id, options });
+        this.syncUi();
+        return true;
+      }
+      return this.beginNarration(id, options);
+    }
+
+    beginNarration(id, options = {}) {
+      if (options.lockPlayer) {
+        this.storyLock = true;
+        this.player.vx = 0;
+        this.player.vy = 0;
+        this.input.clear();
+      }
+      const finish = () => {
+        if (options.lockPlayer) {
+          this.storyLock = false;
+          this.input.clear();
+          this.canvas.focus({ preventScroll:true });
+        }
+        options.onFinish?.();
+        const next = this.narrationQueue.shift();
+        if (next) this.beginNarration(next.id, next.options);
+        this.syncUi();
+      };
+      this.audio.playNarration(id, finish);
+      this.syncUi();
+      return true;
+    }
+
     startLevel(index) {
-      if (index < 0 || index >= DEMO_LEVEL_COUNT || index >= this.progress.unlocked) return false;
+      if (index < 0 || index >= PLAYABLE_LEVEL_COUNT || index >= this.progress.unlocked) return false;
       this.currentLevelIndex = index;
+      this.audio.stopNarration();
+      this.levelNarrationSeen = new Set();
+      this.narrationQueue = [];
+      this.storyLock = false;
       this.level = new Level(index);
       WORLD_W = this.level.worldWidth;
       this.player.spawn = { ...this.level.definition.spawn };
@@ -1221,10 +1376,14 @@
       // The supplied one-second ambience family contains 19 sharp clicks per
       // second. Keep those files preserved, but do not loop them during play.
       this.audio.stopAmbience();
+      if (index > 0) this.playNarrationOnce(`level${index + 1}Start`);
       return true;
     }
 
     restart() {
+      this.audio.stopNarration();
+      this.narrationQueue = [];
+      this.storyLock = false;
       this.level.reset();
       this.player.resetToSpawn();
       this.player.checkpoint = { ...this.player.spawn };
@@ -1262,6 +1421,7 @@
     pauseGame() {
       if (![STATE.PLAYING, STATE.TRANSITION, STATE.PLAYER_DEAD].includes(this.state)) return;
       this.audio.play("uiPause");
+      this.audio.pauseNarration();
       this.returnState = this.state === STATE.TRANSITION ? STATE.PLAYING : this.state;
       this.setState(STATE.PAUSED);
     }
@@ -1269,6 +1429,7 @@
     resumeGame() {
       if (this.state !== STATE.PAUSED) return;
       this.audio.play("uiPause");
+      this.audio.resumeNarration();
       this.setState(this.returnState === STATE.PLAYER_DEAD ? STATE.PLAYER_DEAD : STATE.PLAYING);
       this.lastTime = performance.now();
       this.canvas.focus({ preventScroll: true });
@@ -1291,23 +1452,23 @@
         deaths: previous?.deaths == null ? result.deaths : Math.min(previous.deaths, result.deaths),
         complete: true
       };
-      this.progress.unlocked = Math.min(DEMO_LEVEL_COUNT, Math.max(this.progress.unlocked, this.currentLevelIndex + 2));
+      this.progress.unlocked = Math.min(PLAYABLE_LEVEL_COUNT, Math.max(this.progress.unlocked, this.currentLevelIndex + 2));
       this.safeWrite("phaseShiftFoundry.progress.v1", this.progress);
       this.currentResult = result;
       this.player.vx = 0;
       this.player.vy = 0;
       this.audio.play("levelComplete");
       this.setState(STATE.LEVEL_COMPLETE);
+      this.playNarrationOnce(`level${this.currentLevelIndex + 1}Exit`);
     }
 
     renderLevelSelect() {
       const grid = document.getElementById("level-grid");
       if (!grid) return;
       grid.innerHTML = LEVEL_DEFINITIONS.map((level, index) => {
-        const demoLocked = index >= DEMO_LEVEL_COUNT;
-        const locked = demoLocked || index >= this.progress.unlocked;
+        const locked = index >= this.progress.unlocked;
         const best = this.progress.levels[index];
-        const stats = demoLocked ? '<span class="level-lock">Not available in demo</span>' : locked ? '<span class="level-lock">Locked</span>' : best?.complete
+        const stats = locked ? '<span class="level-lock">Locked</span>' : best?.complete
           ? `${best.shards}/${best.totalShards} memories · ${best.relics}/3 anchors<br>${this.formatTime(best.time)} best time`
           : `${level.targetMinutes} · Unplayed`;
         return `<button class="level-card" type="button" data-level="${index}" ${locked ? "disabled" : ""}><span class="level-number">LEVEL 0${level.number}</span><strong class="level-name">${level.name}</strong><span class="level-stats">${stats}</span></button>`;
@@ -1339,12 +1500,15 @@
       const completeKicker = document.getElementById("complete-kicker");
       if (completeKicker) completeKicker.textContent = `Level ${this.currentLevelIndex + 1} secured · ${this.level.definition.name}`;
       const nextButton = document.querySelector?.('[data-screen="levelComplete"] [data-command="next"]');
-      if (nextButton) nextButton.textContent = this.currentLevelIndex === DEMO_LEVEL_COUNT - 1 ? "Finish demo" : "Next level";
+      if (nextButton) {
+        nextButton.textContent = this.currentLevelIndex === PLAYABLE_LEVEL_COUNT - 1 ? "Complete journey" : "Next level";
+        nextButton.disabled = this.state === STATE.LEVEL_COMPLETE && this.audio.isNarrating;
+      }
       const gameResults = document.getElementById("game-results");
       if (gameResults) {
-        const completed = this.progress.levels.slice(0, DEMO_LEVEL_COUNT).filter(Boolean);
+        const completed = this.progress.levels.slice(0, PLAYABLE_LEVEL_COUNT).filter(Boolean);
         const aggregate = { shards: completed.reduce((sum, item) => sum + item.shards, 0), totalShards: completed.reduce((sum, item) => sum + item.totalShards, 0), relics: completed.reduce((sum, item) => sum + item.relics, 0), deaths: completed.reduce((sum, item) => sum + item.deaths, 0), time: completed.reduce((sum, item) => sum + item.time, 0) };
-        gameResults.innerHTML = `<div class="result-cell"><strong>${aggregate.shards}/${aggregate.totalShards}</strong><span>Total memories</span></div><div class="result-cell"><strong>${aggregate.relics}/${DEMO_LEVEL_COUNT * 3}</strong><span>Total anchors</span></div><div class="result-cell"><strong>${aggregate.deaths}</strong><span>Best deaths</span></div><div class="result-cell"><strong>${this.formatTime(aggregate.time)}</strong><span>Best time</span></div>`;
+        gameResults.innerHTML = `<div class="result-cell"><strong>${aggregate.shards}/${aggregate.totalShards}</strong><span>Total memories</span></div><div class="result-cell"><strong>${aggregate.relics}/${PLAYABLE_LEVEL_COUNT * 3}</strong><span>Total anchors</span></div><div class="result-cell"><strong>${aggregate.deaths}</strong><span>Best deaths</span></div><div class="result-cell"><strong>${this.formatTime(aggregate.time)}</strong><span>Best time</span></div>`;
       }
     }
 
@@ -1410,6 +1574,9 @@
         audioAmbience: this.audio.lastAmbienceAsset,
         audioAmbienceTime: this.audio.ambienceElement.currentTime.toFixed(2),
         audioAmbiencePaused: String(this.audio.ambienceElement.paused),
+        audioNarration: this.audio.narrationElement.dataset.assetId || "",
+        audioNarrating: String(this.audio.isNarrating),
+        storyLock: String(this.storyLock),
         debug: String(this.debug),
         collisionDebug: String(this.collisionDebug),
         labelDebug: String(this.labelDebug),
@@ -1454,6 +1621,12 @@
       if (this.input.wasPressed("restart") && [STATE.PLAYING, STATE.TRANSITION, STATE.PLAYER_DEAD].includes(this.state)) this.restart();
       if (this.input.wasPressed("confirm") && this.state === STATE.TITLE && document.activeElement === this.canvas) this.startLevel(0);
       if (this.orientationBlocked || ![STATE.PLAYING, STATE.TRANSITION, STATE.PLAYER_DEAD].includes(this.state)) return;
+      if (this.storyLock) {
+        this.updateParticles(dt);
+        this.updatePlayerAnimation(dt);
+        this.camera.update(this.player, dt, this.activeVisualDepth(), false, 0);
+        return;
+      }
       this.elapsed += dt;
       this.introTimer = Math.max(0, this.introTimer - dt);
       this.flash = Math.max(0, this.flash - dt);
@@ -1475,7 +1648,7 @@
       const move = (this.input.isDown("right") ? 1 : 0) - (this.input.isDown("left") ? 1 : 0);
       const jumpPressed = this.input.wasPressed("jump");
       const rollPressed = this.input.wasPressed("roll");
-      const shootHeld = this.input.isDown("shoot");
+      const shootHeld = this.input.isDown("shoot") || this.input.wasPressed("shoot");
       const maxSpeed = 285;
       const acceleration = p.grounded ? 2100 : 1250;
       const braking = p.grounded ? 2550 : 620;
@@ -1537,6 +1710,7 @@
       this.checkHazards();
       this.checkCheckpoints();
       this.checkCollectibles();
+      if (this.storyLock) return;
       this.transitionCandidate = this.findNearbyTransition();
       this.transitionValidation = this.transitionCandidate ? this.validateTransition(this.transitionCandidate) : null;
       this.nearTransition = this.transitionValidation?.valid ? this.transitionCandidate : null;
@@ -1603,17 +1777,17 @@
       const p = this.player;
       const aimUp = this.input.isDown("aimUp");
       const damage = this.relicReward ? 2 : 1;
-      // The sprite extends well above its compact collision box. These anchors
-      // align resonance with the raised casting hand rather than the feet.
-      const handX = p.x + p.w * .5 + p.facing * 14;
-      const handY = p.y - 3;
+      // The visible character is taller than her compact collision body. These
+      // anchors match the extended hand in the casting sheets rather than her feet.
+      const handX = p.x + p.w * .5 + p.facing * 20;
+      const handY = p.y - 10;
       if (aimUp) {
-        this.projectiles.push(new Projectile(handX - 3, p.y - 21, 0, -620, p.depth, damage));
+        this.projectiles.push(new Projectile(p.x + p.w * .5 - 6, p.y - 28, 0, -520, p.depth, damage));
       } else {
-        const x = p.facing > 0 ? handX : handX - 13;
-        this.projectiles.push(new Projectile(x, handY, p.facing * 620, 0, p.depth, damage));
+        const x = p.facing > 0 ? handX - 3 : handX - 9;
+        this.projectiles.push(new Projectile(x, handY - 2, p.facing * 520, 0, p.depth, damage));
       }
-      this.emitImpact(handX, aimUp ? p.y - 15 : handY + 3, p.depth, DEPTH_STYLE[p.depth].glow, 4);
+      this.emitImpact(handX, aimUp ? p.y - 22 : handY + 4, p.depth, DEPTH_STYLE[p.depth].glow, 4);
       p.shootCooldown = this.shardReward ? 0.09 : 0.19;
       p.castTimer = this.shardReward ? 0.14 : 0.23;
       p.castUp = aimUp;
@@ -1640,7 +1814,7 @@
           this.emitImpact(projectile.x, projectile.y, projectile.depth, DEPTH_STYLE[projectile.depth].glow);
           projectile.dead = true;
           if (killed) {
-            this.enemyKills += 1;
+            this.registerEnemyKill(enemy);
             this.audio.play("enemyDestroyed");
           } else {
             this.audio.play("enemyHit");
@@ -1696,7 +1870,7 @@
         if (enemy.dead || enemy.depth !== p.depth || !aabb(p, enemy)) continue;
         if (p.rolling && enemy.type === "skitter") {
           enemy.dead = true;
-          this.enemyKills += 1;
+          this.registerEnemyKill(enemy);
           p.vx = p.facing * 440;
           this.audio.play("enemyDestroyed");
         } else {
@@ -1711,6 +1885,11 @@
       if (hazard) this.killPlayer(hazard.id);
     }
 
+    registerEnemyKill(enemy) {
+      this.enemyKills += 1;
+      if (this.currentLevelIndex === 0 && enemy?.type === "brute") this.playNarrationOnce("level1FirstKill");
+    }
+
     checkCheckpoints() {
       for (const checkpoint of this.level.checkpoints) {
         if (checkpoint.active || checkpoint.depth !== this.player.depth || !aabb(this.player, checkpoint)) continue;
@@ -1718,7 +1897,7 @@
         this.level.checkpoints.forEach(item => item.active = false);
         checkpoint.active = true;
         this.player.checkpoint = { x: checkpoint.x, y: checkpoint.y + checkpoint.h - this.player.baseH, depth: checkpoint.depth };
-        this.showReward(`CHECKPOINT SECURED // ${checkpoint.name}`);
+        this.showReward(`PROGRESS SAVED // ${checkpoint.name}`);
         this.audio.play("checkpoint");
       }
     }
@@ -1740,23 +1919,40 @@
       for (const item of this.level.collectibles) {
         if (item.collected || item.depth !== this.player.depth || !aabb(this.player, item)) continue;
         item.collected = true;
+        let narrationId = "";
+        let lockPlayer = false;
+        let rewardMessage = "";
         if (item.kind === "relic") {
           this.relicsFound += 1;
-        this.showReward(`${item.name} SECURED  //  REALITY ANCHOR ${this.relicsFound}/3`);
+          if (this.relicsFound === 1) {
+            narrationId = `level${this.currentLevelIndex + 1}FirstAnchor`;
+            lockPlayer = this.currentLevelIndex === 0;
+          }
+          rewardMessage = `${item.name} SECURED  //  REALITY ANCHOR ${this.relicsFound}/3`;
           if (this.relicsFound === 3) {
             this.relicReward = true;
-            this.showReward("TRI-CORE ONLINE  //  DOUBLE ROCKET + POWER SHOTS");
+            rewardMessage = "TRI-CORE ONLINE  //  DOUBLE ROCKET + POWER SHOTS";
           }
         } else {
           this.collected += 1;
+          if (this.currentLevelIndex === 0 && this.collected === 1) narrationId = "level1FirstMemory";
           if (this.collected === this.totalShards()) {
             this.shardReward = true;
-        this.showReward("MEMORY CHAIN COMPLETE  //  RAPID RESONANCE UNLOCKED");
+            rewardMessage = "MEMORY CHAIN COMPLETE  //  RAPID RESONANCE UNLOCKED";
           }
         }
         this.emitPickup(item);
-        this.flash = 0.11;
         this.audio.play(item.kind === "relic" ? "relic" : "shard");
+        const revealCollection = () => {
+          if (rewardMessage) this.showReward(rewardMessage);
+          this.flash = 0.11;
+        };
+        if (narrationId && item.kind === "relic") {
+          this.playNarrationOnce(narrationId, { lockPlayer, onFinish:revealCollection });
+        } else {
+          revealCollection();
+          if (narrationId) this.playNarrationOnce(narrationId, { lockPlayer });
+        }
       }
     }
 
@@ -1960,6 +2156,7 @@
       this.transitionData = null;
       this.player.landTimer = 0.12;
       this.audio.play("phaseArrival");
+      if (this.currentLevelIndex === 0 && !data.device.returnRoute) this.playNarrationOnce("level1FirstPortal");
       this.emitDust(this.player.x + this.player.w * 0.5, this.player.y + this.player.h - 1, this.player.depth, 7, 0);
       this.flash = 0.16;
     }
@@ -2253,10 +2450,36 @@
       ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     }
 
+    getCleanEnvironmentAtlas(name, image) {
+      if (!["ruins", "trees-middle", "walls-cliffs"].includes(name)) return image;
+      if (this.environmentCutouts.has(name)) return this.environmentCutouts.get(name) || image;
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext("2d", { willReadFrequently:true });
+        context.drawImage(image, 0, 0);
+        const frame = context.getImageData(0, 0, canvas.width, canvas.height);
+        const pixels = frame.data;
+        for (let index = 3; index < pixels.length; index += 4) {
+          const alpha = pixels[index];
+          if (alpha <= 14) pixels[index] = 0;
+          else if (alpha < 42) pixels[index] = Math.round(alpha * (alpha - 14) / 28);
+        }
+        context.putImageData(frame, 0, 0);
+        this.environmentCutouts.set(name, canvas);
+        return canvas;
+      } catch (_) {
+        this.environmentCutouts.set(name, null);
+        return image;
+      }
+    }
+
     drawAtlasCell(name, cell, x, y, w, h, options = {}) {
-      const image = this.environmentArt[name];
+      const sourceImage = this.environmentArt[name];
       const cells = ENVIRONMENT_ATLAS_BOUNDS[name];
-      if (!image || !cells || !image.complete || !image.naturalWidth) return false;
+      if (!sourceImage || !cells || !sourceImage.complete || !sourceImage.naturalWidth) return false;
+      const image = this.getCleanEnvironmentAtlas(name, sourceImage);
       const bounds = cells[Math.abs(Math.floor(cell || 0)) % cells.length];
       const ctx = this.ctx;
       ctx.save();
@@ -2274,17 +2497,20 @@
     }
 
     drawGridCell(image, columns, rows, cell, x, y, w, h, options = {}) {
-      if (!image || !image.complete || !image.naturalWidth) return false;
+      const imageWidth = image?.naturalWidth || image?.width || 0;
+      const imageHeight = image?.naturalHeight || image?.height || 0;
+      if (!image || ("complete" in image && !image.complete) || !imageWidth || !imageHeight) return false;
       const count = columns * rows;
       const frame = ((Math.floor(cell || 0) % count) + count) % count;
-      const cellW = image.naturalWidth / columns;
-      const cellH = image.naturalHeight / rows;
+      const cellW = imageWidth / columns;
+      const cellH = imageHeight / rows;
       const sx = (frame % columns) * cellW;
       const sy = Math.floor(frame / columns) * cellH;
       const ctx = this.ctx;
       ctx.save();
       ctx.globalAlpha *= options.alpha ?? 1;
       if (options.filter) ctx.filter = options.filter;
+      if (options.composite) ctx.globalCompositeOperation = options.composite;
       if (options.flip) {
         ctx.translate(x + w, y);
         ctx.scale(-1, 1);
@@ -2294,6 +2520,39 @@
       }
       ctx.restore();
       return true;
+    }
+
+    getGuardianCutout(image) {
+      if (!image?.complete || !image.naturalWidth) return image;
+      if (this.entityCutouts.has("guardian")) return this.entityCutouts.get("guardian") || image;
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext("2d", { willReadFrequently:true });
+        context.drawImage(image, 0, 0);
+        const frame = context.getImageData(0, 0, canvas.width, canvas.height);
+        const pixels = frame.data;
+        for (let index = 0; index < pixels.length; index += 4) {
+          const red = pixels[index];
+          const green = pixels[index + 1];
+          const blue = pixels[index + 2];
+          const low = Math.min(red, green, blue);
+          const high = Math.max(red, green, blue);
+          if (low > 205 && high - low < 34) {
+            const edgeAlpha = clamp((232 - low) / 27, 0, 1);
+            pixels[index + 3] = Math.round(pixels[index + 3] * edgeAlpha);
+          }
+        }
+        context.putImageData(frame, 0, 0);
+        this.entityCutouts.set("guardian", canvas);
+        return canvas;
+      } catch (_) {
+        // Direct file launches may disallow reading image pixels. Multiplication
+        // in the draw path still suppresses the pale rectangle in that case.
+        this.entityCutouts.set("guardian", null);
+        return image;
+      }
     }
 
     drawEnvironmentDepth(depth) {
@@ -2652,23 +2911,40 @@
 
     drawForegroundOccluders() {
       const ctx = this.ctx;
-      ctx.save();
-      ctx.globalAlpha = 0.56 + (this.player.depth === 2 ? 0.12 : 0);
-      for (const decoration of this.level.decorations) if (decoration.front) this.drawDecoration(decoration);
-      ctx.restore();
-      const spacing = 640;
-      const drift = this.camera.x * 1.28;
-      const first = Math.floor(drift / spacing) - 1;
-      for (let index = first; index < first + 5; index += 1) {
-        const seed = Math.abs(index * 23 + this.currentLevelIndex * 5);
-        const x = index * spacing - drift + (seed % 120) - 110;
-        const h = 255 + seed % 90;
-        this.drawAtlasCell("trees-foreground", seed, x, FLOOR_Y - h + 105, 215 + seed % 80, h, {
-          alpha: this.player.depth === 2 ? .42 : .3,
-          flip: seed % 2 === 0,
-          filter: "saturate(.58) brightness(.42)"
-        });
+      const foregroundAlpha = 0.56 + (this.player.depth === 2 ? 0.12 : 0);
+      for (const decoration of this.level.decorations) {
+        if (!decoration.front) continue;
+        const rect = this.visualRect(decoration);
+        const visibleWidth = Math.max(0, Math.min(VIEW_W, rect.x + rect.w) - Math.max(0, rect.x));
+        const visibleFraction = visibleWidth / Math.max(1, rect.w);
+        if (visibleFraction < .58) continue;
+        ctx.save();
+        ctx.globalAlpha = foregroundAlpha * clamp((visibleFraction - .58) / .34, 0, 1);
+        this.drawDecoration(decoration);
+        ctx.restore();
       }
+
+      // This atlas contains four edge-framing compositions, not freestanding
+      // trees. Anchor them to the viewport edges so trunks and branches end
+      // where the artwork intended instead of producing severed mid-screen tiles.
+      const edgeAlpha = this.player.depth === 2 ? .39 : .27;
+      const sway = Math.sin(this.camera.x * .0018) * 10;
+      this.drawAtlasCell("trees-foreground", 2, -34 + sway, 154, 292, 386, {
+        alpha: edgeAlpha,
+        filter: "saturate(.58) brightness(.42)"
+      });
+      this.drawAtlasCell("trees-foreground", 3, VIEW_W - 270 - sway, 158, 304, 382, {
+        alpha: edgeAlpha * .92,
+        filter: "saturate(.58) brightness(.4)"
+      });
+      this.drawAtlasCell("trees-foreground", 0, -24 + sway * .45, -10, 330, 186, {
+        alpha: edgeAlpha * .72,
+        filter: "saturate(.56) brightness(.38)"
+      });
+      this.drawAtlasCell("trees-foreground", 1, VIEW_W - 310 - sway * .45, -8, 334, 184, {
+        alpha: edgeAlpha * .68,
+        filter: "saturate(.56) brightness(.38)"
+      });
       const fogWidth = 640;
       const fogOffset = (this.camera.x * .22) % fogWidth;
       for (let x = -fogOffset - fogWidth; x < VIEW_W + fogWidth; x += fogWidth) {
@@ -2843,6 +3119,25 @@
       ][platform.depth];
       const topHeight = Math.max(platform.depth === 0 ? 5 : 4, Math.round((active || emphasis ? 7 : 5) * r.scale));
       ctx.save();
+      if (platform.kind === "wall") {
+        if (!emphasis) {
+          const isLevelOneMonolith = this.currentLevelIndex === 0 && platform.depth === 1 && platform.x === 1120;
+          const isLevelOneExitStone = this.currentLevelIndex === 0 && platform.depth === 1 && platform.x === 3020;
+          const isGroundedLandmark = isLevelOneMonolith || isLevelOneExitStone;
+          const wallW = isGroundedLandmark ? (r.w + 16 * r.scale) * 1.35 : r.w + 16 * r.scale;
+          const wallTop = isGroundedLandmark ? r.y - 18 * r.scale : r.y - 5 * r.scale;
+          const wallBottom = isGroundedLandmark ? VIEW_H + 84 * r.scale : r.y + Math.max(r.h, 125 * r.scale);
+          const landmarkShift = isLevelOneMonolith ? 14 * r.scale : isLevelOneExitStone ? -8 * r.scale : 0;
+          const wallX = r.x + r.w * .5 - wallW * .5 + landmarkShift;
+          this.drawAtlasCell("walls-cliffs", seed, wallX, wallTop, wallW, wallBottom - wallTop, {
+            alpha: .98,
+            flip: seed % 2 === 0,
+            filter: platform.depth === 0 ? "saturate(.72) brightness(.7)" : "saturate(.85) brightness(.82)"
+          });
+        }
+        ctx.restore();
+        return r;
+      }
       // Platform depth is communicated by scale, contrast, and parallax. The old
       // depth-coloured shadow produced purple rectangular backings on tall ruins.
       ctx.shadowColor = "rgba(3,7,10,.72)";
@@ -2887,13 +3182,7 @@
       ctx.lineTo(Math.ceil(r.x + r.w), Math.floor(r.y + 1));
       ctx.stroke();
       if (!emphasis) {
-        if (platform.kind === "wall") {
-          this.drawAtlasCell("walls-cliffs", seed, r.x - 8 * r.scale, r.y - 5 * r.scale, r.w + 16 * r.scale, Math.max(r.h, 125 * r.scale), {
-            alpha: .96,
-            flip: seed % 2 === 0,
-            filter: platform.depth === 0 ? "saturate(.72) brightness(.7)" : "saturate(.85) brightness(.82)"
-          });
-        } else {
+        {
           const natural = seed % 3 === 0 || (platform.w >= 420 && platform.kind !== "floor");
           const faceName = natural ? "natural-platforms" : "platform-faces";
           const faceHeight = Math.max(r.h, platform.kind === "floor" ? 82 * r.scale : 46 * r.scale);
@@ -2984,6 +3273,7 @@
       const ctx = this.ctx;
       const r = this.drawPlatformBase(platform);
       if (r.x + r.w < -80 || r.x > VIEW_W + 80) return;
+      if (platform.kind === "wall") return;
       const step = 42 * r.scale;
       ctx.save();
       // Keep a few quiet stone cracks, but no industrial bands, hazard strips,
@@ -3005,12 +3295,95 @@
       const ctx = this.ctx;
       const r = this.visualRect({ x: device.x, y: device.y, w: device.w, h: device.h, depth: device.sourceDepth });
       if (r.x + r.w < -60 || r.x > VIEW_W + 60) return;
+      {
+        const style = DEPTH_STYLE[device.targetDepth];
+        const centerX = r.x + r.w * .5;
+        // Device hitboxes end exactly at the supporting platform surface.
+        // All visual growth happens upward so the enlarged markers cannot float.
+        const groundY = r.y + r.h;
+        const gap = clamp(102.5 * r.scale, 80, 120);
+        const markerW = clamp(40 * r.scale, 30, 48);
+        const markerH = clamp(76.25 * r.scale, 58, 90);
+        const pulse = .55 + Math.sin(this.elapsed * 3.1 + device.x * .013) * .14;
+        const activeAlpha = device.sourceDepth === this.player.depth ? .92 : .48;
+        ctx.save();
+        ctx.globalAlpha = activeAlpha;
+
+        const aura = ctx.createRadialGradient(centerX, groundY - markerH * .38, 0, centerX, groundY - markerH * .38, gap * .61);
+        aura.addColorStop(0, `${style.glow}3d`);
+        aura.addColorStop(.52, `${style.glow}19`);
+        aura.addColorStop(1, `${style.glow}00`);
+        ctx.fillStyle = aura;
+        ctx.beginPath();
+        ctx.ellipse(centerX, groundY - markerH * .34, gap * .59, markerH * .5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Keep the activation field behind the masonry. Only the small motes
+        // are allowed to pass in front of the stones later in this method.
+        const groundGlow = ctx.createRadialGradient(centerX, groundY - 1, 0, centerX, groundY - 1, gap * .58);
+        groundGlow.addColorStop(0, `${style.glow}78`);
+        groundGlow.addColorStop(.55, `${style.glow}35`);
+        groundGlow.addColorStop(1, `${style.glow}00`);
+        ctx.fillStyle = groundGlow;
+        ctx.beginPath();
+        ctx.ellipse(centerX, groundY - 1, gap * .62, 10 * r.scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(centerX, groundY - 2);
+        ctx.scale(1, .28);
+        ctx.strokeStyle = `${style.glow}88`;
+        ctx.shadowColor = style.glow;
+        ctx.shadowBlur = 9 * pulse;
+        ctx.lineWidth = Math.max(1.2, 1.6 * r.scale);
+        for (let arc = 0; arc < 3; arc += 1) {
+          const start = arc * 2.05 + Math.sin(this.elapsed * 1.8 + arc) * .07;
+          ctx.beginPath();
+          ctx.arc(0, 0, gap * (.24 + arc * .055), start, start + .86);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        for (const side of [-1, 1]) {
+          const markerX = centerX + side * gap * .5 - markerW * .5;
+          this.drawAtlasCell("portal-stelae-v1", side < 0 ? 0 : 1, markerX, groundY - markerH, markerW, markerH, {
+            alpha: .98,
+            filter: "saturate(.5) brightness(.92) contrast(1.1)"
+          });
+          ctx.globalAlpha = activeAlpha * .72;
+          ctx.strokeStyle = style.glow;
+          ctx.shadowColor = style.glow;
+          ctx.shadowBlur = 8 * pulse;
+          ctx.lineWidth = Math.max(1, 1.2 * r.scale);
+          ctx.beginPath();
+          ctx.moveTo(markerX + markerW * .5, groundY - markerH * .65);
+          ctx.lineTo(markerX + markerW * .5, groundY - markerH * .26);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha = activeAlpha;
+        }
+
+        ctx.fillStyle = style.glow;
+        ctx.shadowColor = style.glow;
+        ctx.shadowBlur = 6;
+        for (let mote = 0; mote < 8; mote += 1) {
+          const phase = this.elapsed * (.55 + mote * .035) + mote * 1.7;
+          const mx = centerX + Math.sin(phase * 1.35) * gap * .32;
+          const my = groundY - 6 - ((phase * 13 + mote * 8) % 34) * r.scale;
+          ctx.globalAlpha = activeAlpha * (.18 + (Math.sin(phase * 3) + 1) * .12);
+          ctx.beginPath();
+          ctx.arc(mx, my, Math.max(.8, 1.35 * r.scale), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+        return;
+      }
       const style = DEPTH_STYLE[device.targetDepth];
       const baseY = r.y + r.h + 1 * r.scale;
       const centerX = r.x + r.w * .5;
-      const gap = clamp(76 * r.scale, 56, 92);
-      const totemH = clamp(34 * r.scale, 25, 43);
-      const totemW = clamp(18 * r.scale, 13, 23);
+      const gap = clamp(88 * r.scale, 66, 106);
+      const totemH = clamp(48 * r.scale, 34, 58);
+      const totemW = clamp(16 * r.scale, 12, 20);
       const pulse = .62 + Math.sin(this.elapsed * 3.4 + device.x * .01) * .16;
       const activeAlpha = device.sourceDepth === this.player.depth ? .88 : .4;
 
@@ -3029,7 +3402,7 @@
 
       for (const side of [-1, 1]) {
         const x = centerX + side * gap * .5;
-        const lean = side * 2 * r.scale;
+        const lean = side * 3 * r.scale;
         const stone = ctx.createLinearGradient(x - totemW, 0, x + totemW, 0);
         stone.addColorStop(0, "#1b2326");
         stone.addColorStop(.48, "#697273");
@@ -3038,11 +3411,11 @@
         ctx.strokeStyle = "rgba(5,9,11,.78)";
         ctx.lineWidth = Math.max(1, r.scale);
         ctx.beginPath();
-        ctx.moveTo(x - totemW * .62, baseY);
-        ctx.lineTo(x - totemW * .48 + lean, baseY - totemH * .84);
-        ctx.lineTo(x - totemW * .16, baseY - totemH);
-        ctx.lineTo(x + totemW * .42, baseY - totemH * .91);
-        ctx.lineTo(x + totemW * .62, baseY);
+        ctx.moveTo(x - totemW * .72, baseY);
+        ctx.lineTo(x - totemW * .52 + lean, baseY - totemH * .74);
+        ctx.lineTo(x - totemW * .2, baseY - totemH);
+        ctx.lineTo(x + totemW * .34, baseY - totemH * .88);
+        ctx.lineTo(x + totemW * .7, baseY);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
@@ -3081,7 +3454,33 @@
         ctx.lineTo(x, baseY - totemH * .4);
         ctx.stroke();
         ctx.shadowBlur = 0;
+
+        // Suspended cap fragments make these read as paired magical markers,
+        // not miniature doors or save totems.
+        const capY = baseY - totemH - (5 + Math.sin(this.elapsed * 2.5 + side) * 2) * r.scale;
+        ctx.fillStyle = "#596366";
+        ctx.strokeStyle = style.glow;
+        ctx.lineWidth = Math.max(1, r.scale);
+        ctx.beginPath();
+        ctx.moveTo(x, capY - 4 * r.scale);
+        ctx.lineTo(x + 4 * r.scale, capY);
+        ctx.lineTo(x, capY + 4 * r.scale);
+        ctx.lineTo(x - 4 * r.scale, capY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
       }
+
+      // A low strand of energy joins the stones without resembling a doorway.
+      ctx.strokeStyle = `${style.glow}88`;
+      ctx.shadowColor = style.glow;
+      ctx.shadowBlur = 7 * pulse;
+      ctx.lineWidth = Math.max(1, 1.4 * r.scale);
+      ctx.beginPath();
+      ctx.moveTo(centerX - gap * .42, baseY - 13 * r.scale);
+      ctx.bezierCurveTo(centerX - gap * .18, baseY - 20 * r.scale, centerX + gap * .18, baseY - 6 * r.scale, centerX + gap * .42, baseY - 13 * r.scale);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
 
       // A broken, flickering ground sigil takes inspiration from a circular
       // ritual marker without becoming a solid platform or doorway.
@@ -3255,18 +3654,13 @@
       if (r.x + r.w < -40 || r.x > VIEW_W + 40) return;
       const pulse = .65 + Math.sin(this.elapsed * 8 + hazard.x) * .22;
       ctx.save();
-      ctx.fillStyle = "rgba(20,10,26,.92)";
-      ctx.fillRect(r.x, r.y, r.w, Math.max(6,r.h));
       ctx.fillStyle = hazard.type === "void" ? "#ad8cff" : hazard.type === "sparks" ? "#82e9ee" : "#e790bd";
       ctx.shadowColor = ctx.fillStyle;
-      ctx.shadowBlur = 12 * pulse;
-      const teeth = Math.max(2, Math.floor(r.w / 18));
-      for (let i = 0; i < teeth; i += 1) {
-        const x = r.x + i * (r.w / teeth);
+      ctx.shadowBlur = 9 * pulse;
+      ctx.globalAlpha = .24 + pulse * .18;
+      for (let ribbon = 0; ribbon < 3; ribbon += 1) {
         ctx.beginPath();
-        ctx.moveTo(x, r.y + r.h);
-        ctx.lineTo(x + r.w / teeth * .5, r.y - 9 * r.scale);
-        ctx.lineTo(x + r.w / teeth, r.y + r.h);
+        ctx.ellipse(r.x + r.w * (.25 + ribbon * .25), r.y + r.h * .72, r.w * .24, Math.max(2, r.h * (.16 + ribbon * .03)), 0, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
@@ -3276,39 +3670,92 @@
       const ctx = this.ctx;
       const r = this.visualRect(checkpoint);
       if (r.x + r.w < -40 || r.x > VIEW_W + 40) return;
-      const color = checkpoint.active ? "#d8c0ff" : "#82e9ee";
-      const shrineArt = this.entityArt.relics;
-      if (shrineArt?.complete && shrineArt.naturalWidth) {
-        const size = 66 * r.scale;
-        this.drawGridCell(shrineArt, 2, 2, 3, r.x + r.w * .5 - size * .5, r.y + r.h - size, size, size, {
-          alpha: checkpoint.active ? 1 : .88,
-          filter: `drop-shadow(0 0 ${checkpoint.active ? 11 : 6}px ${color})`
-        });
-        ctx.save();
-        ctx.fillStyle = color;
-        ctx.font = `bold ${Math.max(7,Math.round(8*r.scale))}px Consolas, monospace`;
-        ctx.textAlign = "center";
-        ctx.fillText(checkpoint.active ? "REMEMBERED" : "REMEMBER",r.x + r.w*.5,r.y - 8*r.scale);
-        ctx.restore();
-        return;
-      }
+      const color = checkpoint.active ? "#d9c5ff" : "#76bac1";
+      const pulse = .58 + Math.sin(this.elapsed * (checkpoint.active ? 4.2 : 2.1) + checkpoint.x * .01) * .18;
+      const centerX = r.x + r.w * .5;
+      const bottom = r.y + r.h;
+      const height = 58 * r.scale;
+      const width = 34 * r.scale;
       ctx.save();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 3 * r.scale;
-      ctx.shadowColor = color;
-      ctx.shadowBlur = checkpoint.active ? 16 : 7;
+
+      // A grounded cairn base distinguishes save locations from depth portals.
+      ctx.fillStyle = "rgba(15,19,21,.92)";
       ctx.beginPath();
-      ctx.moveTo(r.x + r.w * .5,r.y + r.h);
-      ctx.lineTo(r.x + r.w * .5,r.y + 13 * r.scale);
+      ctx.ellipse(centerX, bottom - 1, width * .8, 7 * r.scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#465052";
+      ctx.beginPath();
+      ctx.moveTo(centerX - width * .68, bottom);
+      ctx.lineTo(centerX - width * .48, bottom - 9 * r.scale);
+      ctx.lineTo(centerX + width * .5, bottom - 9 * r.scale);
+      ctx.lineTo(centerX + width * .7, bottom);
+      ctx.closePath();
+      ctx.fill();
+
+      const stone = ctx.createLinearGradient(centerX - width, 0, centerX + width, 0);
+      stone.addColorStop(0, "#20282b");
+      stone.addColorStop(.43, "#687174");
+      stone.addColorStop(.7, "#40494b");
+      stone.addColorStop(1, "#1d2427");
+      ctx.fillStyle = stone;
+      ctx.strokeStyle = "rgba(8,11,13,.86)";
+      ctx.lineWidth = Math.max(1, r.scale);
+      ctx.beginPath();
+      ctx.moveTo(centerX - width * .38, bottom - 8 * r.scale);
+      ctx.lineTo(centerX - width * .3, bottom - height * .76);
+      ctx.lineTo(centerX - width * .12, bottom - height);
+      ctx.lineTo(centerX + width * .24, bottom - height * .91);
+      ctx.lineTo(centerX + width * .39, bottom - 9 * r.scale);
+      ctx.closePath();
+      ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = "#28233a";
+
+      // Stone joints and moss keep the marker part of the ruin vocabulary.
+      ctx.strokeStyle = "rgba(12,17,19,.55)";
+      for (let joint = 1; joint < 4; joint += 1) {
+        const y = bottom - 8 * r.scale - joint * height * .2;
+        ctx.beginPath();
+        ctx.moveTo(centerX - width * .32, y);
+        ctx.lineTo(centerX + width * (.28 + (joint % 2) * .07), y + (joint % 2 ? 2 : -1) * r.scale);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "rgba(82,104,79,.72)";
+      ctx.fillRect(centerX - width * .39, bottom - 12 * r.scale, width * .73, Math.max(2, 3 * r.scale));
+
+      // The rune changes from a dim outline to a filled, orbiting save seal.
+      ctx.shadowColor = color;
+      ctx.shadowBlur = (checkpoint.active ? 16 : 6) * pulse;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(1.3, 1.8 * r.scale);
+      const runeY = bottom - height * .58;
       ctx.beginPath();
-      ctx.moveTo(r.x+r.w*.24,r.y+r.h); ctx.lineTo(r.x+r.w*.34,r.y+12*r.scale); ctx.lineTo(r.x+r.w*.5,r.y); ctx.lineTo(r.x+r.w*.67,r.y+12*r.scale); ctx.lineTo(r.x+r.w*.76,r.y+r.h); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = color;
-      ctx.beginPath(); ctx.arc(r.x+r.w*.5,r.y+11*r.scale,Math.max(3,5*r.scale),0,Math.PI*2); ctx.fill();
+      ctx.moveTo(centerX, runeY - 9 * r.scale);
+      ctx.lineTo(centerX + 7 * r.scale, runeY);
+      ctx.lineTo(centerX, runeY + 9 * r.scale);
+      ctx.lineTo(centerX - 7 * r.scale, runeY);
+      ctx.closePath();
+      ctx.stroke();
+      if (checkpoint.active) {
+        ctx.globalAlpha = .28 + pulse * .34;
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.ellipse(centerX, runeY, 13 * r.scale, 4 * r.scale, this.elapsed * .7, 0, Math.PI * 2);
+        ctx.stroke();
+        for (let mote = 0; mote < 4; mote += 1) {
+          const angle = this.elapsed * 1.4 + mote * Math.PI * .5;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(centerX + Math.cos(angle) * 12 * r.scale, runeY + Math.sin(angle) * 4 * r.scale, Math.max(1, 1.3 * r.scale), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = checkpoint.active ? "#eee6ff" : "rgba(183,207,207,.82)";
       ctx.font = `bold ${Math.max(7,Math.round(8*r.scale))}px Consolas, monospace`;
       ctx.textAlign = "center";
-      ctx.fillText(checkpoint.active ? "REMEMBERED" : "REMEMBER",r.x + r.w*.5,r.y - 8*r.scale);
+      ctx.fillText(checkpoint.active ? "PROGRESS SAVED" : "SAVE TOTEM", centerX, bottom - height - 8 * r.scale);
       ctx.restore();
     }
 
@@ -3371,41 +3818,56 @@
       const color = this.relicReward ? "#fff3a1" : DEPTH_STYLE[projectile.depth].glow;
       ctx.save();
       ctx.shadowColor = color;
-      ctx.shadowBlur = this.relicReward ? 16 : 11;
+      ctx.shadowBlur = this.relicReward ? 13 : 10;
       ctx.translate(r.x + r.w * .5, r.y + r.h * .5);
-      const vertical = Math.abs(projectile.vy) > Math.abs(projectile.vx);
-      ctx.rotate(vertical ? -Math.PI * .5 : projectile.vx < 0 ? Math.PI : 0);
-      ctx.fillStyle = color;
+      const pulse = 1 + Math.sin(this.elapsed * 24 + projectile.x * .04) * .12;
+      const radius = Math.max(4.2, r.w * .43) * pulse;
+      const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 1.65);
+      glow.addColorStop(0, "rgba(255,255,255,.96)");
+      glow.addColorStop(.28, color);
+      glow.addColorStop(1, `${color}00`);
+      ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.ellipse(0, 0, Math.max(6, r.w * 1.25), Math.max(3, r.h * .85), 0, 0, Math.PI * 2);
+      ctx.arc(0, 0, radius * 1.65, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "rgba(242,248,255,.9)";
+      ctx.strokeStyle = "rgba(247,244,255,.9)";
       ctx.lineWidth = Math.max(1, r.scale);
       ctx.beginPath();
-      ctx.arc(-r.w * .15, 0, Math.max(2, r.h * .55), -.9, .9);
+      ctx.arc(0, 0, radius * .72, -1.2, 1.95);
+      ctx.stroke();
+      ctx.rotate(this.elapsed * 5.5 + projectile.x * .012);
+      ctx.strokeStyle = `${color}bb`;
+      ctx.lineWidth = Math.max(.8, r.scale * .8);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, radius * 1.25, radius * .52, 0, 0, Math.PI * 1.55);
       ctx.stroke();
       ctx.restore();
     }
 
     drawGeneratedEnemy(enemy, r, color) {
       const setup = {
-        skitter: { art: this.entityArt.rootling, size: 72, fps: 11 },
-        brute: { art: this.entityArt.guardian, size: 88, fps: 5.5 },
+        skitter: { art: this.entityArt.rootling, size: 88, fps: 11, groundOffset: .24 },
+        brute: { art: this.entityArt.guardian, size: 110, fps: 5.5 },
         sentry: { art: this.entityArt.bat, size: 70, fps: 10 },
         drifter: { art: this.entityArt.moth, size: 72, fps: 7 }
       }[enemy.type];
       if (!setup?.art?.complete || !setup.art.naturalWidth) return false;
+      const sourceArt = enemy.type === "brute" ? this.getGuardianCutout(setup.art) : setup.art;
+      const guardianFallback = enemy.type === "brute" && sourceArt === setup.art;
       const frame = Math.floor((enemy.time + enemy.spawnX * .0017) * setup.fps) % 8;
       const size = setup.size * r.scale;
       const x = r.x + r.w * .5 - size * .5;
-      const y = enemy.flying ? r.y + r.h * .5 - size * .5 : r.y + r.h - size;
+      const y = enemy.flying
+        ? r.y + r.h * .5 - size * .5
+        : r.y + r.h - size + size * (setup.groundOffset || 0);
       const filter = enemy.hitFlash > 0
         ? `brightness(2.1) saturate(.4) drop-shadow(0 0 8px ${color})`
         : `brightness(1.03) drop-shadow(0 2px 3px rgba(2,3,12,.88))`;
-      this.drawGridCell(setup.art, 4, 2, frame, x, y, size, size, {
+      this.drawGridCell(sourceArt, 4, 2, frame, x, y, size, size, {
         alpha: enemy.hitFlash > 0 ? .72 : 1,
         flip: enemy.vx < 0,
-        filter
+        filter,
+        composite: guardianFallback ? "multiply" : undefined
       });
       if (enemy.maxHealth > 1) {
         const ctx = this.ctx;
@@ -3491,17 +3953,106 @@
       const ctx = this.ctx;
       const r = this.visualRect(goal);
       if (r.x + r.w < -80 || r.x > VIEW_W + 80) return;
+      {
+        const centerX = r.x + r.w * .5;
+        // Sink the base slightly into the platform cap so the ruin reads as
+        // planted in the ground rather than hovering above it.
+        const groundY = r.y + r.h + 9 * r.scale;
+        const archW = clamp(215 * r.scale, 165, 256);
+        const archH = clamp(187.5 * r.scale, 145, 224);
+        const archX = centerX - archW * .5;
+        const archY = groundY - archH;
+        const pulse = .54 + Math.sin(this.elapsed * 2.3) * .11;
+        ctx.save();
+
+        const foundation = ctx.createRadialGradient(centerX, groundY - 2, 0, centerX, groundY - 2, archW * .48);
+        foundation.addColorStop(0, "rgba(111,174,164,.24)");
+        foundation.addColorStop(1, "rgba(10,19,24,0)");
+        ctx.fillStyle = foundation;
+        ctx.beginPath();
+        ctx.ellipse(centerX, groundY - 1, archW * .5, 11 * r.scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // The ethereal light belongs inside and behind the masonry. Draw its
+        // complete opening first, then place the stone arch over it as a mask.
+        const openingW = archW * .49;
+        const openingTop = archY + archH * .235;
+        const openingBottom = groundY - archH * .035;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(centerX - openingW * .5, openingBottom);
+        ctx.lineTo(centerX - openingW * .5, openingTop + openingW * .48);
+        ctx.arc(centerX, openingTop + openingW * .48, openingW * .5, Math.PI, 0);
+        ctx.lineTo(centerX + openingW * .5, openingBottom);
+        ctx.closePath();
+        ctx.clip();
+        ctx.globalCompositeOperation = "screen";
+        const innerLight = ctx.createRadialGradient(centerX, archY + archH * .55, 0, centerX, archY + archH * .56, openingW * .82);
+        innerLight.addColorStop(0, `rgba(225,255,245,${.68 + pulse * .18})`);
+        innerLight.addColorStop(.34, "rgba(122,218,205,.56)");
+        innerLight.addColorStop(.72, "rgba(44,111,122,.3)");
+        innerLight.addColorStop(1, "rgba(8,23,32,.08)");
+        ctx.fillStyle = innerLight;
+        ctx.fillRect(centerX - openingW * .58, openingTop, openingW * 1.16, openingBottom - openingTop);
+        ctx.fillStyle = "rgba(221,255,245,.46)";
+        ctx.shadowColor = "#a7f4df";
+        ctx.shadowBlur = 11;
+        for (let mote = 0; mote < 10; mote += 1) {
+          const phase = this.elapsed * (.38 + mote * .022) + mote * 1.31;
+          const mx = centerX + Math.sin(phase * 1.7) * openingW * .31;
+          const my = openingBottom - ((phase * 18 + mote * 13) % Math.max(20, openingBottom - openingTop));
+          ctx.globalAlpha = .25 + (Math.sin(phase * 3.2) + 1) * .12;
+          ctx.beginPath();
+          ctx.arc(mx, my, Math.max(.8, 1.25 * r.scale), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        this.drawAtlasCell("exit-arch-v1", 0, archX, archY, archW, archH, {
+          alpha: .99,
+          filter: "saturate(.6) brightness(.66)"
+        });
+
+        ctx.fillStyle = "rgba(205,244,233,.78)";
+        ctx.shadowColor = "#9fe7d5";
+        ctx.shadowBlur = 9;
+        ctx.beginPath();
+        ctx.arc(centerX, archY + archH * .39, Math.max(1.4, 2.1 * r.scale), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        return;
+      }
       const pulse = 0.55 + Math.sin(this.elapsed * 4) * 0.18;
       const centerX = r.x + r.w * .5;
       const bottom = r.y + r.h;
-      const radius = r.w * .3;
-      const archY = r.y + r.w * .38;
-      this.drawAtlasCell("arches", this.currentLevelIndex + 2, r.x - r.w * .32, r.y - r.h * .05, r.w * 1.64, r.h * 1.12, {
-        alpha: .62,
-        flip: this.currentLevelIndex % 2 === 0,
-        filter: "saturate(.58) brightness(.58)"
-      });
+      const radius = r.w * .33;
+      const archY = r.y + r.w * .43;
       ctx.save();
+
+      // A broad stepped foundation and broken buttresses give the exit a
+      // monumental silhouette that cannot be mistaken for paired shift stones.
+      ctx.fillStyle = "rgba(13,17,19,.94)";
+      ctx.beginPath();
+      ctx.ellipse(centerX, bottom - 2 * r.scale, r.w * .78, 11 * r.scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+      for (const side of [-1, 1]) {
+        const outerX = centerX + side * (radius + 18 * r.scale);
+        const buttress = ctx.createLinearGradient(outerX - 12 * r.scale, 0, outerX + 12 * r.scale, 0);
+        buttress.addColorStop(0, "#20272a");
+        buttress.addColorStop(.5, "#66706e");
+        buttress.addColorStop(1, "#1d2426");
+        ctx.fillStyle = buttress;
+        ctx.beginPath();
+        ctx.moveTo(outerX - 9 * r.scale, bottom);
+        ctx.lineTo(outerX - 7 * r.scale, archY - 6 * r.scale);
+        ctx.lineTo(outerX - 2 * r.scale, archY - 17 * r.scale);
+        ctx.lineTo(outerX + 8 * r.scale, archY - 11 * r.scale);
+        ctx.lineTo(outerX + 13 * r.scale, bottom);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "rgba(8,11,13,.72)";
+        ctx.stroke();
+      }
       ctx.beginPath();
       ctx.moveTo(centerX - radius, bottom);
       ctx.lineTo(centerX - radius, archY);
@@ -3573,24 +4124,39 @@
       ctx.fillStyle = "rgba(89,116,87,.76)";
       ctx.fillRect(r.x - r.w * .04, bottom - 13 * r.scale, r.w * 1.08, 4 * r.scale);
 
-      // Crown stone and completion sigil make this unmistakably different from shift portals.
-      ctx.fillStyle = "#4f5859";
+      // A fractured crown and suspended completion seal replace the old door cap.
+      ctx.fillStyle = "#555f5e";
       ctx.beginPath();
-      ctx.moveTo(centerX, r.y - 13 * r.scale);
-      ctx.lineTo(centerX + 13 * r.scale, r.y + 2 * r.scale);
-      ctx.lineTo(centerX, r.y + 17 * r.scale);
-      ctx.lineTo(centerX - 13 * r.scale, r.y + 2 * r.scale);
+      ctx.moveTo(centerX - 31 * r.scale, archY - 2 * r.scale);
+      ctx.lineTo(centerX - 17 * r.scale, r.y + 5 * r.scale);
+      ctx.lineTo(centerX - 5 * r.scale, r.y - 5 * r.scale);
+      ctx.lineTo(centerX, r.y + 8 * r.scale);
+      ctx.lineTo(centerX + 9 * r.scale, r.y - 9 * r.scale);
+      ctx.lineTo(centerX + 25 * r.scale, r.y + 4 * r.scale);
+      ctx.lineTo(centerX + 32 * r.scale, archY - 2 * r.scale);
+      ctx.lineTo(centerX + 18 * r.scale, archY + 7 * r.scale);
+      ctx.lineTo(centerX - 19 * r.scale, archY + 7 * r.scale);
       ctx.closePath();
       ctx.fill();
-      ctx.strokeStyle = "#b9dfcf";
+      ctx.strokeStyle = "rgba(184,202,193,.46)";
       ctx.lineWidth = Math.max(1, 1.5 * r.scale);
       ctx.stroke();
+
+      const sealY = r.y - 15 * r.scale + Math.sin(this.elapsed * 2.2) * 3 * r.scale;
       ctx.fillStyle = "#d8eee2";
       ctx.shadowColor = "#9fe7d5";
-      ctx.shadowBlur = 9;
+      ctx.shadowBlur = 13;
       ctx.beginPath();
-      ctx.arc(centerX, r.y + 2 * r.scale, 4 * r.scale, 0, Math.PI * 2);
+      ctx.moveTo(centerX, sealY - 7 * r.scale);
+      ctx.lineTo(centerX + 7 * r.scale, sealY);
+      ctx.lineTo(centerX, sealY + 7 * r.scale);
+      ctx.lineTo(centerX - 7 * r.scale, sealY);
+      ctx.closePath();
       ctx.fill();
+      ctx.strokeStyle = "rgba(216,238,226,.7)";
+      ctx.beginPath();
+      ctx.arc(centerX, sealY, 13 * r.scale, -1.2, 1.7);
+      ctx.stroke();
       ctx.restore();
     }
 
@@ -4010,7 +4576,7 @@
           ["Climb the broken crown in the near layer.", "Search each reality for an anchor; the distant garden hides one.", "Read platform scale and portal mist before every depth shift."],
           ["The False Crossing chains every skill across all three realities.", "Surge, slide, cast, and shift—the mirror lock has no single-layer route.", "Reach the final door to break the illusion."],
           ["Sustain long three-layer routes through the buried world.", "Checkpoint beacons secure major passages. Plan before shifting.", "Enemies guard direct routes; alternate realities can be safer."],
-          ["Lost Reality is the final mastery test. Read the whole structure.", "Hazards remain fixed; use depth to route around them.", "The final chamber chains every layer before the last door."]
+          ["Lost Reality is the final mastery test. Read the whole structure.", "Use depth to uncover safer routes through the ruins.", "The final chamber chains every layer before the last door."]
         ][this.currentLevelIndex];
         introLines.forEach((line, index) => ctx.fillText(line, VIEW_W / 2, 151 + index * 17));
         ctx.textAlign = "left";

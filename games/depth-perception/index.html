@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Depth Perception — a three-level demo across three shifting layers of reality.">
+  <meta name="description" content="Depth Perception — a five-level journey across three shifting layers of reality.">
   <meta name="theme-color" content="#080817">
   <title>Depth Perception</title>
   <script>if (new URLSearchParams(location.search).get("controls") === "0") document.documentElement.classList.add("hide-development-controls");</script>
@@ -25,7 +25,7 @@
       <div class="ui-layer" id="ui-layer">
         <section class="menu-screen title-screen" data-screen="title" aria-labelledby="title-heading">
           <p class="menu-kicker">The world is deeper than it appears</p><h2 id="title-heading">Depth<br><span>Perception</span></h2>
-          <p class="menu-copy">Cross three layers of a fractured world, where distance changes scale and every threshold reveals a different truth.</p>
+          <p class="menu-copy">Cross five passages through three layers of a fractured world, where distance changes scale and every threshold reveals a different truth.</p>
           <nav class="menu-actions" aria-label="Main menu">
             <button type="button" id="enable-audio" data-command="enable-audio">Enable menu audio</button><button type="button" data-command="start">Start game</button><button type="button" data-command="level-select">Level select</button><button type="button" data-command="options">Options</button><button type="button" data-command="credits">Credits</button>
           </nav>
@@ -37,6 +37,7 @@
           <p class="menu-kicker">Tune your perception</p><h2 id="options-heading">Options</h2>
           <label class="option-row"><span>Music volume</span><input id="music-volume" type="range" min="0" max="100" value="45"></label>
           <label class="option-row"><span>SFX volume</span><input id="sfx-volume" type="range" min="0" max="100" value="70"></label>
+          <label class="option-row"><span>Narration volume</span><input id="voice-volume" type="range" min="0" max="100" value="90"></label>
           <div class="option-row"><span>Touch controls</span><button type="button" id="touch-mode" data-command="touch-mode" disabled>Inactive</button></div>
           <button class="menu-back" type="button" data-command="back">← Back</button>
         </section>
@@ -53,8 +54,8 @@
           <p class="menu-kicker" id="complete-kicker">Route secured</p><h2 id="complete-heading">Level complete</h2><div class="results-grid" id="level-results"></div>
           <nav class="menu-actions horizontal-actions"><button type="button" data-command="next">Next level</button><button type="button" data-command="restart">Retry</button><button type="button" data-command="level-select">Level select</button></nav>
         </section>
-        <section class="menu-screen results-screen" data-screen="gameComplete" hidden aria-labelledby="game-complete-heading">
-          <p class="menu-kicker">Demo complete</p><h2 id="game-complete-heading">The crossing continues</h2><p class="menu-copy">You have reached the end of the playable demo. Revisit the first three passages to recover missed memories and anchors.</p><div class="results-grid" id="game-results"></div>
+        <section class="menu-screen results-screen game-complete-screen" data-screen="gameComplete" hidden aria-labelledby="game-complete-heading">
+          <p class="menu-kicker">The final passage is sealed</p><h2 id="game-complete-heading">Depth remembers</h2><p class="menu-copy">The five crossings are complete. The fractured realities settle around every memory and anchor you recovered.</p><div class="results-grid" id="game-results"></div>
           <nav class="menu-actions horizontal-actions"><button type="button" data-command="level-select">Replay levels</button><button type="button" data-command="title">Title screen</button></nav>
         </section>
       </div>
@@ -65,10 +66,10 @@
       </div>
     </section>
     <footer class="controls" aria-label="Keyboard controls">
-<div class="control-group"><span class="key">A</span><span class="key">D</span><b>Move</b></div><div class="control-group boost"><span class="key wide">Space ×2</span><b>Jump / surge</b></div><div class="control-group roll"><span class="key">S</span><b>Phase slide</b></div><div class="control-group weapon"><span class="key">J</span><b>Resonance / ↑ aim</b></div><div class="control-group accent"><span class="key">E</span><b>Shift plane</b></div><div class="control-group"><span class="key">Esc</span><b>Pause</b></div>
+<div class="control-group"><span class="key">A</span><span class="key">D</span><b>Move</b></div><div class="control-group boost"><span class="key wide">Space ×2</span><b>Jump / surge</b></div><div class="control-group roll"><span class="key">S</span><b>Phase slide</b></div><div class="control-group weapon"><span class="key wide">J / LMB</span><b>Resonance / ↑ aim</b></div><div class="control-group accent"><span class="key">E</span><b>Shift plane</b></div><div class="control-group"><span class="key">Esc</span><b>Pause</b></div>
     </footer>
-<p class="hint">Second jump surges higher. Phase-slide through ground creatures and beneath ruins. Cast upward with ↑ + J.</p>
+<p class="hint">Second jump surges higher. Phase-slide beneath ruins. Cast with J or left click; hold ↑ to cast upward.</p>
   </main>
-  <script src="game.js?v=totem-return-pass-4"></script>
+  <script src="game.js?v=portal-glow-layering-23"></script>
 </body>
 </html>
